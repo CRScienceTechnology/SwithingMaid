@@ -23,8 +23,8 @@ const int mqtt_port = 1883;                //MQTT服务器的IPV4地址开放端
 
 // MQTT User
 // 用于改写的String类
-String mqtt_username_str = "swithingmaid" + maidcode;
-String mqtt_password_str = "swithingmaid" + maidcode;
+String mqtt_username_str = "swithingmaid" + maidcode + ' ' + WiFi.macAddress();
+String mqtt_password_str = "swithingmaid" + maidcode + ' ' + WiFi.macAddress();
 String topic_str = "swithing_maid_" + maidcode + "_state";
 // 实际传入函数的字符串指针变量
 const char *mqtt_username = mqtt_username_str.c_str();  //调用.c_str()方法把字符串变为字符串指针
@@ -66,7 +66,7 @@ void setup() {
         client_id += String(WiFi.macAddress());
         Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str()); //client_id.c_str()
 
-        if (client.connect("ESP01S", mqtt_username, mqtt_password)) {
+        if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
             Serial.println("Public EMQX MQTT Server connected");
             
             client.publish(topic, "swithing maid is ready"); //发布主题
@@ -89,7 +89,6 @@ void setup() {
     }
 
 }
-
 
 void loop()
 {
