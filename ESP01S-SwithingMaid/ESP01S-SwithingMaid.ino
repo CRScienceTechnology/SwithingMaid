@@ -214,5 +214,12 @@ void callback(char *topic, byte *payload, unsigned int length)
 // 1.解决输入角度180°时，产生的 PWM 占空比归零的问题
 
 
+// ToDo:
+// 1.解决启用 analogWriteFreq () 造成的 MQTT 消息响应缓慢问题
+
+// Finished:
+// 1.调整了 PWM 周期，使其能够从0转动到180°
+
+
 // Used RAM:61311 Bytes (93%)
 // Used Flash: 
