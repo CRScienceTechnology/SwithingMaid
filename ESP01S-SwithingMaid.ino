@@ -100,7 +100,7 @@ void loop()
         WiFi.begin(ssid, password);
         while (WiFi.status() != WL_CONNECTED) {
             delay(500);
-            Serial.println("Connecting to WiFi...");
+            Serial.println("Re-connecting to WiFi...");
         }
         Serial.println("Connected to the WiFi network");
 
@@ -212,7 +212,7 @@ void callback(char *topic, byte *payload, unsigned int length)
 // 2. SG90 舵机依靠 PWM 周期来决定可转动角度，
 // ToDo:
 // 1.解决输入角度180°时，产生的 PWM 占空比归零的问题
-
+// 2.解决传入 JSON angle 小于90°时电机不响应问题
 
 // ToDo:
 // 1.解决启用 analogWriteFreq () 造成的 MQTT 消息响应缓慢问题

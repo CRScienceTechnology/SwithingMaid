@@ -1,0 +1,22 @@
+#line 1 "C:\\Users\\Administrator\\AppData\\Local\\Arduino15\\RemoteSketchbook\\ArduinoCloud\\78686059\\ESP01S-SwithingMaid\\README.md"
+# 1. 简介
+
+这是一个基于ESP01S的智能开关，能够通过红外离线控制、手机程序控制、AI智能控制三种方式对其进行控制，通过加装在原有86型开关面板使其具有联网控制的功能。
+
+
+
+# 2. 使用
+
+
+
+
+# 3. 开发
+
+## 3.1. 目录
+
+
+## 3.2. 运行
+
+
+
+# 4. 致谢
