@@ -1,8 +1,23 @@
 import ast
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QTextEdit, QLineEdit, QLabel
+import time
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QTextEdit, QLineEdit, QLabel,QMessageBox
+from PyQt6.QtCore import QTimer
 import paho.mqtt.client as mqtt
 import json
+
+class AutoCloseMessageBox(QMessageBox):
+    def __init__(self, title, message, timeout=1000, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setText(message)
+        self.setStandardButtons(QMessageBox.StandardButton.Ok)
+        self.setDefaultButton(QMessageBox.StandardButton.Ok)
+        self.timer = QTimer(self)
+        self.timer.setInterval(timeout)
+        self.timer.timeout.connect(self.close)
+        self.timer.start()
+
 
 
 # 定义一个继承自QMainWindow的MQTTClient类
@@ -68,6 +83,10 @@ class MQTTClient(QMainWindow):
         self.subscribe_button = QPushButton("Subscribe", self)
         self.subscribe_button.clicked.connect(self.subscribe_topic)
         
+        # 创建测试按钮，以0°为步进值，发送间隔为1s，发送0-180角度的消息体
+        self.test_button = QPushButton("Test", self)
+        self.test_button.clicked.connect(self.run_test)
+
         # 创建标签、输入框、按钮，用于输入消息、发送消息
         # 设置标签内容
         self.sending_message_textbox_label = QLabel("Message:", self)
@@ -77,6 +96,8 @@ class MQTTClient(QMainWindow):
         self.publish_button = QPushButton("Publish", self)
         self.publish_button.clicked.connect(self.publish_message)
         
+        
+
         # 创建垂直布局，并将所有控件添加到布局中
         layout = QVBoxLayout()
         layout.addWidget(self.text_edit)
@@ -89,6 +110,7 @@ class MQTTClient(QMainWindow):
         layout.addWidget(self.sending_message_textbox_label)
         layout.addWidget(self.sending_message_textbox)
         layout.addWidget(self.publish_button)
+        layout.addWidget(self.test_button)
         
         # 创建一个容器部件，并将布局设置为该部件的布局
         container = QWidget()
@@ -125,6 +147,29 @@ class MQTTClient(QMainWindow):
         
         # 在文本编辑器中更新订阅信息
         self.text_edit.append(f"Subscribed to topic {self.topic}")    
+
+    def run_test(self):
+        """
+
+        """
+        test_meassage = {
+            "maidcode": "01",
+            "status": "on",
+            "angle": 0
+        }
+        topic = self.topic_input.text()
+        for i in range(19):
+            # 每次循环消息体角度步进10度
+            test_meassage["angle"] = i * 10
+            # 发布消息
+            self.client.publish(topic, json.dumps(test_meassage))
+            # 弹窗控件显示现在处于第几个循环
+            msg_box = AutoCloseMessageBox("提示", f"第{i}次", timeout=1000, parent=self)
+            msg_box.show()
+            # 系统等待1秒
+            QApplication.processEvents()  # 处理事件循环，避免界面冻结
+            time.sleep(1)
+
 
     def publish_message(self):
         """

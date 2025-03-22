@@ -191,7 +191,7 @@ void callback(char *topic, byte *payload, unsigned int length)
         else if (strcmp(recieved_maid_code, maidcode.c_str()) == 0 && strcmp(recieved_maid_status, "off")==0) 
         {  
            Serial.print("off");
-           Serial.print("transformed angle value:"+String(transformed_angle));
+           Serial.print("transformed 8-bit angle value:"+String(transformed_angle));
            // 关闭软 PWM
            for(int dutyCycle = 0; dutyCycle < 1023; dutyCycle++)
            { 
