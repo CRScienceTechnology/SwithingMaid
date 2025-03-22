@@ -33,6 +33,8 @@ class MQTTClient(QMainWindow):
         self.client.on_connect = self.on_connect  
         # 设置当客户端接收到消息时的回调函数
         self.client.on_message = self.on_message  
+        # 设置默认JSON消息体
+        self.message = '{"maidcode":"01","status":"on","angle":90}' # Learn:JSON消息体只能用单引号存储
         # 调用初始化用户界面的方法
         self.initUI()  
         
@@ -55,7 +57,7 @@ class MQTTClient(QMainWindow):
         
         # 创建连接按钮，并连接到connect_to_broker方法
         self.connect_button = QPushButton("Connect", self)
-        self.connect_button.clicked.connect(self.connect_to_broker)
+        self.connect_button.clicked.connect(self.connect_to_broker) # Learn:点击回调函数的传入
         
         # 创建订阅按钮，并连接到subscribe_topic方法
         self.subscribe_button = QPushButton("Subscribe", self)
@@ -63,7 +65,7 @@ class MQTTClient(QMainWindow):
         
         # 创建标签和输入框，用于输入要发布的消息
         self.message_label = QLabel("Message:", self)
-        self.message_input = QLineEdit(self)
+        self.message_input = QLineEdit(self.message,self) # Learn：放入QLineEdit的是启动时的默认信息
         
         # 创建发布按钮，并连接到publish_message方法
         self.publish_button = QPushButton("Publish", self)
@@ -132,7 +134,7 @@ class MQTTClient(QMainWindow):
         # 通过客户端发布消息到指定主题
         self.client.publish(topic, message)
         # 在文本编辑器中追加显示发布的消息和主题
-        self.text_edit.append(f"Published message '{message}' to topic {topic}")
+        self.text_edit.append(f"Published message '{message}' to topic {topic}\n")
 
     def on_connect(self, client, userdata, flags, rc, properties=None):
         """
@@ -162,16 +164,20 @@ class MQTTClient(QMainWindow):
         此函数将消息内容解码并显示在文本编辑器中，以便用户可以看到接收到的消息。
         """
         # 将接收到的消息追加到文本编辑器中，包括消息内容和主题
-        self.text_edit.append(f"Received message '{msg.payload.decode()}' on topic {msg.topic}")   
+        self.text_edit.append(f"\n Topic: {msg.topic}  received message: '{msg.payload.decode()}'  \n ")   
 
 
 
 if __name__ == "__main__":
+
+    # 创建QApplication对象
     app = QApplication(sys.argv)
+    # 创建窗口对象
     window = MQTTClient()
+    # 显示窗口
     window.show()
     sys.exit(app.exec())
 
 
 # Repair:
-# 修复：TestServer.py:31: DeprecationWarning: Callback API version 1 is deprecated, update to latest version self.client = mqtt.Client(client_id="", userdata=None, protocol=mqtt.MQTTv5) Exception in thread paho-mqtt-client-
+# 2025.3.22：TestServer.py:31: DeprecationWarning: Callback API version 1 is deprecated, update to latest version self.client = mqtt.Client(client_id="", userdata=None, protocol=mqtt.MQTTv5) Exception in thread paho-mqtt-client-
