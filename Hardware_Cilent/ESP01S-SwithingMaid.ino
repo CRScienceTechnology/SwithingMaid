@@ -49,7 +49,9 @@ void setup() {
     //setup阶段做一些前提准备
     Serial.begin(115200); // Set software serial baud to 115200;
     delay(1000);          // Delay for stability
-
+    // 设置 PWM 频率为 50Hz (周期 20ms)
+    analogWriteFreq(50);
+    
     // Connecting to a WiFi network
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
@@ -172,29 +174,28 @@ void callback(char *topic, byte *payload, unsigned int length)
         const char* recieved_maid_status=jsonObj["status"];
         const float recieved_maid_rotate_angle=jsonObj["angle"].as<float>();
 
-        const int transformed_angle = int (recieved_maid_rotate_angle*(254.0/180.0)); // 将角度转化为0-255的数值
+        const float transformed_angle = recieved_maid_rotate_angle*(255.0*0.125/180.0); // 将角度转化为0-255的数值
 
 
         if (strcmp(recieved_maid_code, maidcode.c_str()) == 0 &&strcmp(recieved_maid_status, "on")==0 ) // Notice：strcmp匹配完全相同才返回0
         {
+           
            Serial.println("status:on");
            Serial.println("transformed angle value:"+String(transformed_angle));
            // 开启软 PWM
            for(int dutyCycle = 0; dutyCycle < 1023; dutyCycle++)// on esp01s the analogwrite ranges from 0 to 255 ,as the same time the pwm duty varies
           { 
-            analogWrite(PWM_Pin, transformed_angle);// 设置占空比
-            delay(1);                               // 设置PWM周期
+            analogWrite(PWM_Pin,int(transformed_angle));// 设置占空比
           }
         } 
         else if (strcmp(recieved_maid_code, maidcode.c_str()) == 0 && strcmp(recieved_maid_status, "off")==0) 
-        {
+        {  
            Serial.print("off");
            Serial.print("transformed angle value:"+String(transformed_angle));
            // 关闭软 PWM
            for(int dutyCycle = 0; dutyCycle < 1023; dutyCycle++)
            { 
-            analogWrite(PWM_Pin, 0);
-            delay(1);               
+            analogWrite(PWM_Pin, 0);              
            }
         }
     }
@@ -207,10 +208,17 @@ void callback(char *topic, byte *payload, unsigned int length)
 // 2. ESP01S 模拟 PWM 波的固定形式为为上述 for 循环语句内所示，用 while(1) 会造成堵塞
 
 // Features:
-// 1. ESP01S 在本次 analogWrite() 函数软模拟PWM波时，输入的数值范围是0-255
-
+// 1. ESP01S 在本次 analogWrite() 函数软模拟PWM波时，输入的数值范围是0-255，默认周期1ms，可以使用analogWriteFreq()进行频率设定，许可范围15~65535hz
+// 2. SG90 舵机依靠 PWM 周期来决定可转动角度，
 // ToDo:
 // 1.解决输入角度180°时，产生的 PWM 占空比归零的问题
+
+
+// ToDo:
+// 1.解决启用 analogWriteFreq () 造成的 MQTT 消息响应缓慢问题
+
+// Finished:
+// 1.调整了 PWM 周期，使其能够从0转动到180°
 
 
 // Used RAM:61311 Bytes (93%)
