@@ -1,3 +1,4 @@
+import ast
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QTextEdit, QLineEdit, QLabel
 import paho.mqtt.client as mqtt
@@ -38,7 +39,7 @@ class MQTTClient(QMainWindow):
         # 设置当客户端连接到MQTT代理时的回调函数  
         self.client.on_connect = self.on_connect  
         # 设置当客户端接收到消息时的回调函数
-        self.client.on_message = self.on_message  
+        self.client.on_message = self.recieved_message  
         # 调用初始化用户界面的方法
         self.initUI()  
         
@@ -67,10 +68,11 @@ class MQTTClient(QMainWindow):
         self.subscribe_button = QPushButton("Subscribe", self)
         self.subscribe_button.clicked.connect(self.subscribe_topic)
         
-        # 创建标签和输入框，用于输入要发布的消息
-        self.message_label = QLabel("Message:", self)
-        self.message_input = QLineEdit(self)
-        
+        # 创建标签、输入框、按钮，用于输入消息、发送消息
+        # 设置标签内容
+        self.sending_message_textbox_label = QLabel("Message:", self)
+        # 展示默认消息
+        self.sending_message_textbox = QLineEdit(str(self.message),self)
         # 创建发布按钮，并连接到publish_message方法
         self.publish_button = QPushButton("Publish", self)
         self.publish_button.clicked.connect(self.publish_message)
@@ -84,8 +86,8 @@ class MQTTClient(QMainWindow):
         layout.addWidget(self.topic_label)
         layout.addWidget(self.topic_input)
         layout.addWidget(self.subscribe_button)
-        layout.addWidget(self.message_label)
-        layout.addWidget(self.message_input)
+        layout.addWidget(self.sending_message_textbox_label)
+        layout.addWidget(self.sending_message_textbox)
         layout.addWidget(self.publish_button)
         
         # 创建一个容器部件，并将布局设置为该部件的布局
@@ -133,8 +135,14 @@ class MQTTClient(QMainWindow):
         """
         # 获取主题输入框中的内容
         topic = self.topic_input.text() 
-        # 获取消息输入框中的内容，这里使用预设的JSON消息
-        message = self.message
+        # 获取 message_input 输入框中的内容，这里使用预设的JSON消息
+        message = self.sending_message_textbox.text()
+        try :
+            # 尝试将字符串类型的 message 转换为格式
+            message = ast.literal_eval(message)
+        except json.JSONDecodeError:
+            # 如果message不是有效的JSON格式，终端弹出警告
+            print("Invalid JSON format. Using predefined message.")
         # 通过客户端发布消息到指定主题，使用json.dumps将message转换为JSON格式
         self.client.publish(topic, json.dumps(message))
         # 在文本编辑器中追加显示发布的消息和主题
@@ -156,7 +164,7 @@ class MQTTClient(QMainWindow):
         # 在文本编辑区域追加显示连接结果代码
         self.text_edit.append(f"Connected with result code {rc}")
     
-    def on_message(self, client, userdata, msg):
+    def recieved_message(self, client, userdata, msg):
         """
         当接收到消息时调用的回调函数。
     
@@ -185,3 +193,4 @@ if __name__ == "__main__":
 # Repair:
 # 2025.3.22：TestServer.py:31: DeprecationWarning: Callback API version 1 is deprecated, update to latest version self.client = mqtt.Client(client_id="", userdata=None, protocol=mqtt.MQTTv5) Exception in thread paho-mqtt-client-
 # 2025.3.22: 修复了 ESP8266 接收到的消息体类似"{\"maidcode\":\"01\",\"status\":\"on\",\"angle\":90}"的不正确形式
+# 2025.3.22：将发送JSON消息的获取形式改为从控件中获取
