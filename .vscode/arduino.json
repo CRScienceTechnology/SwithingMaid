@@ -3,5 +3,5 @@
     "board": "esp8266:esp8266:generic",
     "port": "COM11",
     "sketch": "ESP01S-SwithingMaid.ino",
-    "output": "./output"
+    "output": "./Compile_output"
 }
