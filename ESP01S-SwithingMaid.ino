@@ -94,6 +94,18 @@ void setup() {
 
 void loop()
 {
+    // 检查开发板是否进程堵塞
+    if (Serial.available())
+    {
+        String command = Serial.readStringUntil('\n');
+        command.trim();
+        if (command=="AT")
+        {
+            Serial.println("OK");
+        }
+        
+    }
+
     // 检查WiFi连接状态
     if (WiFi.status() != WL_CONNECTED) {
         Serial.println("WiFi connection lost. Reconnecting...");
@@ -139,6 +151,24 @@ void loop()
 }
 
 
+
+// 示例：非阻塞 PWM 调整
+int currentDutyCycle = 0;
+int targetDutyCycle = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //The parameters of the callback function are passed in automatically 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -155,7 +185,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     Serial.println("Message is"+message);  
 
     // Analysis the received message
-    StaticJsonDocument<200> jsonDoc;   // 创建200字节大小的jsonDoc对象，用于存储解析后的JSON数据
+    StaticJsonDocument<122> jsonDoc;   // 创建100字节大小的jsonDoc对象，用于存储解析后的JSON数据
     deserializeJson(jsonDoc, message); // 解析这个message字符串，并将结果存储在 jsonDoc
 
     // Judge if jsonDoc has the correct format data like standard json data,then process the mission  
@@ -174,7 +204,8 @@ void callback(char *topic, byte *payload, unsigned int length)
         const char* recieved_maid_status=jsonObj["status"];
         const float recieved_maid_rotate_angle=jsonObj["angle"].as<float>();
 
-        const float transformed_angle = recieved_maid_rotate_angle*(255.0*0.125/180.0); // 将角度转化为0-255的数值
+        // 角度空间<-->占空比空间<-->8位存储值空间 转换算法
+        const float transformed_angle = (255)*(recieved_maid_rotate_angle/180.0*0.1+0.025); 
 
 
         if (strcmp(recieved_maid_code, maidcode.c_str()) == 0 &&strcmp(recieved_maid_status, "on")==0 ) // Notice：strcmp匹配完全相同才返回0
@@ -182,16 +213,16 @@ void callback(char *topic, byte *payload, unsigned int length)
            
            Serial.println("status:on");
            Serial.println("transformed angle value:"+String(transformed_angle));
-           // 开启软 PWM
-           for(int dutyCycle = 0; dutyCycle < 1023; dutyCycle++)// on esp01s the analogwrite ranges from 0 to 255 ,as the same time the pwm duty varies
-          { 
-            analogWrite(PWM_Pin,int(transformed_angle));// 设置占空比
-          }
+            // 开启软 PWM
+            // for(int dutyCycle = 0; dutyCycle < 1023; dutyCycle++)// on esp01s the analogwrite ranges from 0 to 255 ,as the same time the pwm duty varies
+           //{ 
+             analogWrite(PWM_Pin,int(transformed_angle));// 设置占空比
+           //}
         } 
         else if (strcmp(recieved_maid_code, maidcode.c_str()) == 0 && strcmp(recieved_maid_status, "off")==0) 
         {  
-           Serial.print("off");
-           Serial.print("transformed 8-bit angle value:"+String(transformed_angle));
+           Serial.println("off");
+           Serial.println("transformed 8-bit angle value:"+String(transformed_angle));
            // 关闭软 PWM
            for(int dutyCycle = 0; dutyCycle < 1023; dutyCycle++)
            { 
@@ -203,22 +234,23 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 
 // Learn:
-// 1. printfln 比 print 多一个换行符 
+// 1. Serial.printfln 比 Serial.print 多一个换行符 
 // 2. Analog 函数的范围就是0-255
 // 2. ESP01S 模拟 PWM 波的固定形式为为上述 for 循环语句内所示，用 while(1) 会造成堵塞
 
 // Features:
 // 1. ESP01S 在本次 analogWrite() 函数软模拟PWM波时，输入的数值范围是0-255，默认周期1ms，可以使用analogWriteFreq()进行频率设定，许可范围15~65535hz
 // 2. SG90 舵机依靠 PWM 周期来决定可转动角度，
+
 // ToDo:
 // 1.解决输入角度180°时，产生的 PWM 占空比归零的问题
 // 2.解决传入 JSON angle 小于90°时电机不响应问题
+// 3.解决启用 analogWriteFreq () 造成的 MQTT 消息响应缓慢问题
 
-// ToDo:
-// 1.解决启用 analogWriteFreq () 造成的 MQTT 消息响应缓慢问题
 
 // Finished:
 // 1.调整了 PWM 周期，使其能够从0转动到180°
+// 2.调整了角度(-->占空比)-->8bit 角度值的转换公式，解决了输入180°时，占空比将近100%的问题，实测输入180°时，8位存储值实际值为31.88，理论值为31.875
 
 
 // Used RAM:61311 Bytes (93%)

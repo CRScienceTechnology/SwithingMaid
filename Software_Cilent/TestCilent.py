@@ -6,17 +6,46 @@ from PyQt6.QtCore import QTimer
 import paho.mqtt.client as mqtt
 import json
 
+
 class AutoCloseMessageBox(QMessageBox):
+    """
+    自定义消息框类，继承自QMessageBox。
+    该类用于创建一个具有自动关闭功能的消息框。
+
+    参数:
+    - title: 消息框的标题。
+    - message: 消息框显示的消息内容。
+    - timeout: 消息框自动关闭前显示的时间（毫秒），默认为1000毫秒（1秒）。
+    - parent: 父窗口，通常用于窗口管理，如定位和模态行为，默认为None。
+    """
     def __init__(self, title, message, timeout=1000, parent=None):
+        # 初始化父类构造方法
         super().__init__(parent)
+        
+        # 设置消息框的标题
         self.setWindowTitle(title)
+        
+        # 设置消息框的显示内容
         self.setText(message)
+        
+        # 设置消息框的标准按钮为“确定”
         self.setStandardButtons(QMessageBox.StandardButton.Ok)
+        
+        # 设置默认按钮为“确定”
         self.setDefaultButton(QMessageBox.StandardButton.Ok)
+        
+        # 初始化定时器
         self.timer = QTimer(self)
+        
+        # 设置定时器的时间间隔
         self.timer.setInterval(timeout)
+        
+        # 将定时器的timeout信号连接到消息框的close槽，以实现自动关闭功能
         self.timer.timeout.connect(self.close)
+        
+        # 启动定时器
         self.timer.start()
+
 
 
 
